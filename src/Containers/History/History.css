@@ -1,0 +1,18 @@
+.HistoryBox {
+    height: 450px;
+    overflow-x: scroll;
+    margin-bottom: 10px;
+}
+
+.userName {
+    color: #8698fe;
+}
+
+.userMessage {
+    font-weight: 300;
+}
+
+ul.messageList {
+    /* list-style-type: none; */
+    padding-left: 20px;
+}
