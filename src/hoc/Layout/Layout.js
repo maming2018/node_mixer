@@ -1,13 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import socketIOClient from "socket.io-client";
+import { SERVER_ENDPOINT } from '../../Config/constants';
+
 import History from '../../Components/History/History';
 import Channels from '../../Components/Channels/Channels';
-import socketIOClient from "socket.io-client";
+import axios from 'axios';
 
 const socket = socketIOClient('http://127.0.0.1:3001', { transports: ['websocket', 'polling', 'flashsocket'] });
 
 const Layout = props => {
 
+
+  let access_token = '';
+
+  let vars = {};
+  window.location.href.replace(/[#&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+    vars[key] = value;
+  });
+
+  // console.log(vars)
+
+  if (vars.access_token) {
+    access_token = vars.access_token;
+  } else if (localStorage.getItem('access_token')) {
+    access_token = localStorage.getItem('access_token');
+  }
+  // console.log("access_token: ", access_token)
+
   const [currentChannel, setCurrentChannel] = useState('102802767');
+  const [isAuthorized, setIsAuthorized] = useState(false)
+
+  useEffect(() => {
+    if (access_token !== "") {
+      axios.post(`${SERVER_ENDPOINT}/token-verify`, {
+        access_token: access_token
+      }).then(response => {
+        // console.log("response:", response)
+        if (response.data === "AUTHENTICATED") {
+          console.log("You are authorized to chat")
+          localStorage.setItem('access_token', access_token)
+          setIsAuthorized(true)
+        }
+      }).catch(error => {
+        localStorage.removeItem('access_token')
+        console.log('error', error)
+        console.log("You aren't authorized to chat")
+      })
+    }
+  }, [])
 
   const channelClickHandler = (channel_id) => {
     setCurrentChannel(channel_id);
@@ -19,10 +59,12 @@ const Layout = props => {
       <hr />
       <div className="row">
         <div className="col-sm">
+
           <Channels currentChannel={currentChannel} channelClickHandler={channelClickHandler} />
+
         </div>
         <div className="col-sm">
-          <History socket={socket} currentChannel={currentChannel} />
+          <History socket={socket} isAuthorized={isAuthorized} currentChannel={currentChannel} />
         </div>
       </div>
     </div>

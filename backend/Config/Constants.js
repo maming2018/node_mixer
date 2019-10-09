@@ -1,0 +1,1 @@
+export const MIXER_API_ENDPOINT = "https://mixer.com/api/v1";

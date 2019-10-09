@@ -1,53 +1,43 @@
 const Mixer = require('@mixer/client-node');
 const ws = require('ws');
 const express = require("express");
+const cors = require('cors');
+// const Sequelize = require('sequelize');
+const bodyParser = require('body-parser');
 const http = require("http");
 const socketIo = require("socket.io");
 const axios = require("axios");
 const chalk = require('chalk');
 
-const port = 3001;
-const index = require("./routes/index");
+const sequelize = require('./Config/Database');
+const MixerChat = require('./Models/MixerChat');
 
+const MIXER_API_ENDPOINT = "https://mixer.com/api/v1";
+
+sequelize.sync({ force: false });
+
+const port = 3001;
 
 const app = express();
-app.use(index);
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json());
+
+app.get("/", (req, res) => {
+  console.log('HOME RUN');
+  res.send({ response: "I am alive" }).status(200);
+});
 
 const server = http.createServer(app);
 
 const io = socketIo(server); // < Interesting!
-
-// let interval;
 
 io.on("connection", socketCustom => {
 
   // console.log("CALLED mixerSocketData");
   mixerSocketData(socketCustom)
 
-  // console.log("New client connected");
-  // if (interval) {
-  //   clearInterval(interval);
-  // }
-  // // interval = setInterval(() => getApiAndEmit(socketCustom), 10000);
-  // interval = setInterval(() => {
-  //   getApiAndEmit(socketCustom);
-  //   mixerSocketData(socketCustom);
-  // }, 10000);
-  // socketCustom.on("disconnect", () => {
-  //   console.log("Client disconnected");
-  // });
 });
-
-const getApiAndEmit = async socketCustom => {
-  try {
-    const res = await axios.get(
-      "https://api.darksky.net/forecast/API_KEY_HERE/43.7695,11.2558"
-    ); // Getting the data from DarkSky
-    socketCustom.emit("FromAPI", res.data.currently.temperature); // Emitting a new message. It will be consumed by the client
-  } catch (error) {
-    console.error(`Error: ${error.code}`);
-  }
-};
 
 const client = new Mixer.Client(new Mixer.DefaultRequestRunner());
 
@@ -55,8 +45,6 @@ const mixerSocketData = async socketCustom => {
 
   let userInfo;
 
-  // With OAuth we don't need to log in. The OAuth Provider will attach
-  // the required information to all of our requests after this call.
   client.use(new Mixer.OAuthProvider(client, {
     tokens: {
       access: 'dp4ptPbLelvKGirFDCqMS6LQyxh4uxs5FXEnrl6xARowZ06yII4HafoNA7luuDfH',
@@ -64,11 +52,8 @@ const mixerSocketData = async socketCustom => {
     },
   }));
 
-  // Gets the user that the Access Token we provided above belongs to.
   client.request('GET', 'users/current')
     .then(response => {
-      // console.log("users/current THEN ONE")
-      // console.log(response.body);
 
       // Store the logged in user's details for later reference
       userInfo = response.body;
@@ -77,7 +62,6 @@ const mixerSocketData = async socketCustom => {
       return new Mixer.ChatService(client).join(response.body.channel.id);
     })
     .then(response => {
-      // console.log("users/current THEN TWO")
       const body = response.body;
       // console.log(body);
       return createChatSocket(userInfo.id, userInfo.channel.id, body.endpoints, body.authkey, socketCustom);
@@ -97,6 +81,7 @@ const mixerSocketData = async socketCustom => {
   * @returns {Promise.<>}
   */
 function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
+
   const socket = new Mixer.Socket(ws, endpoints).boot();
 
   // You don't need to wait for the socket to connect before calling
@@ -115,7 +100,7 @@ function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
   // Listen for chat messages. Note you will also receive your own!
   socket.on('ChatMessage', data => {
     console.log('We got a ChatMessage packet!');
-    console.log(data.message);
+    console.log(data);
 
     let text_message = '-';
     let image_url = '-';
@@ -132,6 +117,29 @@ function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
     // searchOutput.push(raw)
 
     // console.log(data.message); // Let's take a closer look
+    MixerChat.findOne({
+      attributes: ['id'],
+      where: { chatId: data.id }
+    }).then(chat => {
+      console.log("Chat:", chat)
+      if (chat) {
+        console.log("Chat already exist in db")
+      } else {
+        console.log("Insert chat in db")
+
+        MixerChat.create({ chatId: data.id, channelId: data.channel, userId: data.user_id, messageType: data.message.message[0].type, message: data.text_message, imageUrl: data.image_url }).then(chat => {
+          console.log(`Auto-generated ID:`, chat.id);
+        }).catch(err => {
+          console.log("Sequlize save error: ", err);
+        });
+
+      }
+      // return res.send(response)
+    }).catch(err => {
+      console.log("Message search error");
+      // return res.send(err)
+    });
+
     // socketCustom.emit("ChatMessage", "Hey boy"); // Emitting a new message. It will be consumed by the client
     socketCustom.emit("ChatMessage", data); // Emitting a new message. It will be consumed by the client
   });
@@ -142,20 +150,98 @@ function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
     console.error(error);
   });
 
-  socket.emit('sendMessageEmit', data => {
-    console.error('sendMessageEmit');
-    console.error(data);
+  app.post('/send-new-message', (req, res) => {
+    console.log('/send-new-message')
+
+    const { new_message } = req.body
+
+    socket.call('msg', [new_message]);
+
+    // MixerChat.create({ channelId: channelId, userId: userId, messageType: 'text', message: new_message, imageUrl: '-' }).then(chat => {
+    //   console.log(`Auto-generated ID:`, chat.id);
+    // }).catch(err => {
+    //   console.log("Sequlize save error: ", err);
+    // });
+
+    res.send("sent").status(200);
   });
 }
 
+app.get('/history', (req, res) => {
 
-// Create an item
-app.post('/send-new-message', (req, res) => {
-  console.log('/send-new-message')
-  console.log(req.body)
+  // const channel_id = 102802767;
+  // console.log(req.query);
+  const channel_id = req.query.channel_id
 
-  const { category, description, tags, isTagSearchOnly, status } = req.body
+  let searchOutput = [];
+  let saveToDb = [];
 
+  axios.get(`${MIXER_API_ENDPOINT}/chats/${channel_id}/history`).then(function (response) {
+    response.data.forEach(raw => {
+      // console.log(raw)
+      let text_message = '-';
+      let image_url = '-';
+      if (raw.message.message[0].type === 'text') {
+        text_message = raw.message.message[0].text;
+      } else if (raw.message.message[0].type === 'image') {
+        text_message = raw.message.message[0].text;
+        image_url = raw.message.message[0].url;
+      } else {
+        text_message = raw.message.message[0].type;
+      }
+
+      let newItem = {
+        channel: raw.channel,
+        user_name: raw.user_name,
+        text_message: text_message,
+        image_url: image_url,
+      }
+      searchOutput.push(newItem);
+
+      let dbItem = {
+        chatId: raw.id,
+        channelId: raw.channel,
+        userId: raw.user_id,
+        messageType: raw.message.message[0].type,
+        message: text_message,
+        imageUrl: image_url,
+      }
+
+      saveToDb.push(dbItem);
+    })
+
+    MixerChat.destroy({
+      where: {
+        channelId: channel_id
+      }
+    }).then(r => {
+      MixerChat.bulkCreate(saveToDb)
+    })
+
+    res.send({ 'history': searchOutput }).status(200);
+  }).catch(function (error) {
+    console.log(error);
+  })
+
+})
+
+app.post('/token-verify', (req, res) => {
+
+  let userInfo;
+
+  const { access_token } = req.body;
+  // console.log("access_token:", access_token);
+
+  axios.get(`${MIXER_API_ENDPOINT}/users/current`, {
+    headers: { Authorization: `Bearer ${access_token}` }
+  }).then(() => {
+    console.log('You are now authenticated!');
+    res.send('AUTHENTICATED').status(200);
+  }).catch(error => {
+    console.log("Error 1: ", error.data)
+    console.error('Oh no! An error occurred.');
+    res.send('AUTH-REQUIRED2').status(200);
+  });
 })
 
 server.listen(port, () => {
