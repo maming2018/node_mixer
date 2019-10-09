@@ -72,7 +72,7 @@ const Layout = props => {
   }
 
   const responseUpdate = () => {
-    console.log("responseUpdate called");
+    // console.log("responseUpdate called");
   }
 
   return (

@@ -252,18 +252,33 @@ app.get('/channels', (req, res) => {
 // Create an item
 app.post('/channels', (req, res) => {
 
-  // console.log('CREATE CHANNEL')
-  // console.log(req.body)
+  const { channelName } = req.body
 
-  const { channelName, channelId } = req.body
+  axios.get(`${MIXER_API_ENDPOINT}/channels/${channelName}?fields=id`).then(response => {
+    if (response.data.error) {
+      // console.log("Error 3", err);
+      return res.send(response.data.error)
+    } else {
+      let channelId = response.data.id;
+      // console.log("Channerl Id", response.data.id);
+      Channels.create({ channelName: channelName, channelId: channelId }).then(channels => {
+        // console.log(`Auto-generated ID:`, channels.id);
+        return res.send(channels)
+      }).catch(err => {
+        // console.log("Error 1", err);
+        return res.send(err)
+      });
+    }
+  }).catch(error => {
+    // console.log("Error 2", error);
+    // console.log("Error 2", error.response.data.error);
+    // console.log("Error 4", error.data);
 
-  Channels.create({ channelName: channelName, channelId: channelId }).then(channels => {
-    // console.log(`Auto-generated ID:`, channels.id);
-    return res.send(channels)
-  }).catch(err => {
-    console.log(err);
-    return res.send(err)
-  });
+    if (error.response.data.error && error.response.data.error === 'Not Found') {
+      return res.send("notfound")
+    }
+    return res.send(error)
+  })
 })
 
 server.listen(port, () => {

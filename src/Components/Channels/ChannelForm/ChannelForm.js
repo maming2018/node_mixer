@@ -11,21 +11,10 @@ const initialFormState = {
     valid: false,
     touched: false,
     validationRules: {
-      minLength: 2,
       isRequired: true
-    },
-  },
-  channelId: {
-    value: '',
-    valid: false,
-    touched: false,
-    validationRules: {
-      minLength: 2,
-      isRequired: false
     },
   }
 };
-
 
 const ChannelForm = props => {
 
@@ -44,12 +33,7 @@ const ChannelForm = props => {
           ...initialFormState['channelName'],
           value: props.defaultValue.channelName,
           valid: true,
-        },
-        channelId: {
-          ...initialFormState['channelId'],
-          value: props.defaultValue.channelId,
-          valid: true,
-        },
+        }
       }
       setIsNewItem(false)
       setFormIsValid(true)
@@ -62,39 +46,35 @@ const ChannelForm = props => {
     setisLoading(true)
     const data = {
       channelName: formData.channelName.value,
-      channelId: formData.channelId.value,
     }
 
-    if (isNewItem === true) {
-      axios.post('/channels', data).then(response => {
-        // console.log("Success: ", response)
-        setisLoading(false)
+    axios.post('/channels', data).then(response => {
+      // console.log("Success: ", response)
+      setisLoading(false)
+
+      if (response.data === "notfound") {
+        setFormIsValid(false)
+
+        const editFormState = {
+          ...formData,
+          channelName: {
+            ...formData['channelName'],
+            valid: false,
+          }
+        }
+        setFormIsValid(false)
+        setFormData(editFormState)
+
+      } else {
         props.updateHandler('created', response.data);
-        props.responseUpdate({ type: 'success', value: 'Keyword inserted' });
-      }).catch(e => {
-        console.log("Error: ", e)
-        setisLoading(false)
-        props.responseUpdate({ type: 'danger', value: 'Something went wrong while update' });
-      })
-    }
-    else {
-
-      const updatedData = {
-        ...data,
-        id: props.defaultValue.id
+        props.responseUpdate({ type: 'success', value: 'Channel inserted' });
       }
+    }).catch(e => {
+      console.log("Error: ", e)
+      setisLoading(false)
+      props.responseUpdate({ type: 'danger', value: 'Something went wrong while update' });
+    })
 
-      axios.patch('/channels', updatedData).then(response => {
-        console.log("Success: ", response)
-        setisLoading(false)
-        props.updateHandler('updated', updatedData);
-        props.responseUpdate({ type: 'success', value: 'Keyword updated' });
-      }).catch(e => {
-        setisLoading(false)
-        console.log("Error: ", e)
-        props.responseUpdate({ type: 'danger', value: 'Something went wrong while update' });
-      })
-    }
   }
 
   const inputChangehandler = (event) => {
@@ -156,20 +136,8 @@ const ChannelForm = props => {
                 className={inputClassNameHandler('channelName')}
                 onChange={inputChangehandler}
                 value={formData.channelName.value}
-                placeholder="channel Name" />
-              <span className="invalid-feedback">Please enter valid channel name. Minimum {formData.channelName.validationRules.minLength} character required.</span>
-            </div>
-          </div>
-          <div className="form-group row">
-            <label className="col-sm-3 col-form-label">Channel Id</label>
-            <div className="col-sm-9">
-              <input
-                name="channelId"
-                type="text"
-                className={inputClassNameHandler('channelId')}
-                onChange={inputChangehandler}
-                value={formData.channelId.value}
-                placeholder="Channel Id" />
+                placeholder="Channel Name" />
+              <span className="invalid-feedback">Please enter valid channel name.</span>
             </div>
           </div>
 

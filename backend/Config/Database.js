@@ -6,11 +6,6 @@ const sequelize = new Sequelize('iludate', 'root', '', {
   dialect: 'mysql'
 });
 
-// const sequelize = new Sequelize('wtshub_react_search_app', 'wtshub_react_sea', 'H,D!zXN#U+yj', {
-//   host: 'localhost',
-//   dialect: 'mysql'
-// });
-
 sequelize.authenticate().then(() => {
   console.log('Connection has been established successfully.');
 }).catch(err => {
