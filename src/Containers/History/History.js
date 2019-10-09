@@ -13,10 +13,6 @@ const History = props => {
     messagesEnd.scrollIntoView({ behavior: "smooth" });
   }, [props.history, messagesEnd])
 
-  // const scrollToBottom = () => {
-  //   messagesEnd.scrollIntoView({ behavior: "smooth" });
-  // }
-
   return (
     <div className="HistoryBox">
       <ul className="messageList">

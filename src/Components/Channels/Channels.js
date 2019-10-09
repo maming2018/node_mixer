@@ -1,25 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from '../../Config/axios';
 
 import ChannelsCont from '../../Containers/Channels/Channels'
+import Loader from '../Loader/LoaderOne'
 
 const Channels = props => {
 
-  // https://mixer.com/api/v1/channels/VintageRoom?fields=id
+  const [channels, setChannels] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const channels = [
-    // { name: 'AustinNorman', id: '102582456' },
-    // { name: 'Babalon_Don', id: '23383288' },
-    // { name: 'Camara', id: '13905476' },
-    // { name: 'FadedTrack27157', id: '102729102' },
-    { name: 'MoltenCupid7120', id: '102802767' },
-    // { name: 'VintageRoom', id: '53877114' },
-  ];
+  useEffect(() => {
+
+    // console.log("USE EFFECT COMPONENT/CHANNELS.js");
+
+    setIsLoading(true);
+
+    axios.get('/channels').then(response => {
+      // console.log("Response: ", response);
+      setChannels(response.data);
+    }).catch(error => {
+      console.log("Error: ", error);
+    }).then(function () {
+      setIsLoading(false);
+    });
+  }, [props.someUpdate])
 
   return (
     <div>
-      <h3>Channels </h3>
+      <h3>
+        Channels
+        <button className="btn btn-sm btn-dark" style={{ float: 'right' }} onClick={props.modalHandler}>Add New Channel</button>
+      </h3>
 
-      <ChannelsCont currentChannel={props.currentChannel} channelClickHandler={props.channelClickHandler} channels={channels} />
+      {
+        isLoading === true ? <div className="mt-2"><Loader /></div> :
+          <ChannelsCont currentChannel={props.currentChannel} channelClickHandler={props.channelClickHandler} channels={channels} />
+      }
     </div>
   );
 };

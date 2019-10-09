@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import socketIOClient from "socket.io-client";
+import axios from 'axios';
 import { SERVER_ENDPOINT } from '../../Config/constants';
 
 import History from '../../Components/History/History';
 import Channels from '../../Components/Channels/Channels';
-import axios from 'axios';
+import ChannelForm from '../../Components/Channels/ChannelForm/ChannelForm';
 
 const socket = socketIOClient('http://127.0.0.1:3001', { transports: ['websocket', 'polling', 'flashsocket'] });
 
 const Layout = props => {
-
 
   let access_token = '';
 
@@ -28,7 +28,9 @@ const Layout = props => {
   // console.log("access_token: ", access_token)
 
   const [currentChannel, setCurrentChannel] = useState('102802767');
-  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isModal, setIsModal] = useState(false);
+  const [someUpdate, setSomeUpdate] = useState({});
 
   useEffect(() => {
     if (access_token !== "") {
@@ -53,20 +55,55 @@ const Layout = props => {
     setCurrentChannel(channel_id);
   }
 
+  const modalHandler = () => {
+    // const newState = !isModal;
+    setIsModal(true)
+  }
+
+  const cancelHandler = () => {
+    // const newState = !isModal;
+    setIsModal(false)
+  }
+
+  const updateHandler = (action, data) => {
+    setIsModal(false)
+    setSomeUpdate(action, data)
+    // console.log("updateHandler called");
+  }
+
+  const responseUpdate = () => {
+    console.log("responseUpdate called");
+  }
+
   return (
     <div className="container">
-      <h2>Mixer</h2>
-      <hr />
-      <div className="row">
-        <div className="col-sm">
+      <div className={isModal === true ? 'Opacity-01' : null}>
+        <h2>Mixer</h2>
+        <hr />
+        <div className="row">
+          <div className="col-sm">
 
-          <Channels currentChannel={currentChannel} channelClickHandler={channelClickHandler} />
+            <Channels
+              someUpdate={someUpdate}
+              currentChannel={currentChannel}
+              channelClickHandler={channelClickHandler}
+              modalHandler={modalHandler} />
 
-        </div>
-        <div className="col-sm">
-          <History socket={socket} isAuthorized={isAuthorized} currentChannel={currentChannel} />
+          </div>
+          <div className="col-sm">
+            <History socket={socket} isAuthorized={isAuthorized} currentChannel={currentChannel} />
+          </div>
         </div>
       </div>
+      {isModal === true ?
+        <div>
+          <ChannelForm
+            defaultValue={{ id: 'new' }}
+            updateHandler={(action, data) => updateHandler(action, data)}
+            cancelHandler={cancelHandler}
+            responseUpdate={responseUpdate} />
+        </div> : null
+      }
     </div>
 
   );

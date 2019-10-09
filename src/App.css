@@ -2,6 +2,10 @@
   cursor: pointer;
 }
 
+.Opacity-01 {
+  opacity: 0.1
+}
+
 .App-logo {
   height: 40vmin;
 }

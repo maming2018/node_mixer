@@ -15,7 +15,7 @@ const History = props => {
 
   useEffect(() => {
 
-    console.log("USE EFFECT COMPONENT/HISTORY.js");
+    // console.log("USE EFFECT COMPONENT/HISTORY.js");
 
     if (props.currentChannel !== '') {
       setIsLoading(true);
@@ -33,13 +33,12 @@ const History = props => {
         setIsLoading(false);
 
         if (props.isAuthorized === true) {
-          console.log("%cCalling chat socket", "color:blue")
-
+          // console.log("%cCalling chat socket", "color:blue")
           props.socket.on("ChatMessage", data => {
-            console.log("%cNew chat message", "color:blue");
+            // console.log("%cNew chat message", "color:blue");
             // console.table(data)
 
-            setHistory(prevMovies => ([...prevMovies, data]));
+            setHistory(prevHistory => ([...prevHistory, data]));
           });
         }
 

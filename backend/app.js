@@ -2,7 +2,6 @@ const Mixer = require('@mixer/client-node');
 const ws = require('ws');
 const express = require("express");
 const cors = require('cors');
-// const Sequelize = require('sequelize');
 const bodyParser = require('body-parser');
 const http = require("http");
 const socketIo = require("socket.io");
@@ -11,6 +10,7 @@ const chalk = require('chalk');
 
 const sequelize = require('./Config/Database');
 const MixerChat = require('./Models/MixerChat');
+const Channels = require('./Models/Channels');
 
 const MIXER_API_ENDPOINT = "https://mixer.com/api/v1";
 
@@ -30,11 +30,10 @@ app.get("/", (req, res) => {
 
 const server = http.createServer(app);
 
-const io = socketIo(server); // < Interesting!
+const io = socketIo(server);
 
 io.on("connection", socketCustom => {
 
-  // console.log("CALLED mixerSocketData");
   mixerSocketData(socketCustom)
 
 });
@@ -48,7 +47,7 @@ const mixerSocketData = async socketCustom => {
   client.use(new Mixer.OAuthProvider(client, {
     tokens: {
       access: 'dp4ptPbLelvKGirFDCqMS6LQyxh4uxs5FXEnrl6xARowZ06yII4HafoNA7luuDfH',
-      expires: Date.now() + (365 * 24 * 60 * 60 * 1000)
+      expires: Date.now() + (10 * 365 * 24 * 60 * 60 * 1000)
     },
   }));
 
@@ -157,12 +156,6 @@ function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
 
     socket.call('msg', [new_message]);
 
-    // MixerChat.create({ channelId: channelId, userId: userId, messageType: 'text', message: new_message, imageUrl: '-' }).then(chat => {
-    //   console.log(`Auto-generated ID:`, chat.id);
-    // }).catch(err => {
-    //   console.log("Sequlize save error: ", err);
-    // });
-
     res.send("sent").status(200);
   });
 }
@@ -240,7 +233,37 @@ app.post('/token-verify', (req, res) => {
   }).catch(error => {
     console.log("Error 1: ", error.data)
     console.error('Oh no! An error occurred.');
-    res.send('AUTH-REQUIRED2').status(200);
+    res.send('AUTH-REQUIRED').status(200);
+  });
+})
+
+// get all channels
+app.get('/channels', (req, res) => {
+
+  Channels.findAll({ order: [['channelName', 'ASC']] }).then(data => {
+    // console.log('All data:', JSON.stringify(data, null, 4));
+    return res.send(data)
+  }).catch(err => {
+    console.log(err);
+    return res.send(err)
+  });
+})
+
+// Create an item
+app.post('/channels', (req, res) => {
+
+  // console.log('CREATE CHANNEL')
+  // console.log(req.body)
+
+  const { channelName, channelId } = req.body
+  // console.log('CREATE category: ', category)
+
+  Channels.create({ channelName: channelName, channelId: channelId }).then(channels => {
+    console.log(`${category}'s auto-generated ID:`, channels.id);
+    return res.send(channels)
+  }).catch(err => {
+    console.log(err);
+    return res.send(err)
   });
 })
 
