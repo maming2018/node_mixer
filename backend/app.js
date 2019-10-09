@@ -256,10 +256,9 @@ app.post('/channels', (req, res) => {
   // console.log(req.body)
 
   const { channelName, channelId } = req.body
-  // console.log('CREATE category: ', category)
 
   Channels.create({ channelName: channelName, channelId: channelId }).then(channels => {
-    console.log(`${category}'s auto-generated ID:`, channels.id);
+    // console.log(`Auto-generated ID:`, channels.id);
     return res.send(channels)
   }).catch(err => {
     console.log(err);
