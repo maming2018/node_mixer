@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import socketIOClient from "socket.io-client";
 import axios from 'axios';
-import { SERVER_ENDPOINT } from '../../Config/constants';
+import { SERVER_ENDPOINT, OUR_MIXER_CHANNEL_ID } from '../../Config/constants';
 
 import History from '../../Components/History/History';
 import Channels from '../../Components/Channels/Channels';
@@ -27,7 +27,7 @@ const Layout = props => {
   }
   // console.log("access_token: ", access_token)
 
-  const [currentChannel, setCurrentChannel] = useState('102802767');
+  const [currentChannel, setCurrentChannel] = useState(OUR_MIXER_CHANNEL_ID);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isModal, setIsModal] = useState(false);
   const [socketData, setSocketData] = useState(null);
