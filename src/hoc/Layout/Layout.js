@@ -30,6 +30,7 @@ const Layout = props => {
   const [currentChannel, setCurrentChannel] = useState('102802767');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isModal, setIsModal] = useState(false);
+  const [socketData, setSocketData] = useState(null);
   const [someUpdate, setSomeUpdate] = useState({});
 
   useEffect(() => {
@@ -41,7 +42,12 @@ const Layout = props => {
         if (response.data === "AUTHENTICATED") {
           console.log("You are authorized to chat")
           localStorage.setItem('access_token', access_token)
-          setIsAuthorized(true)
+          setIsAuthorized(true);
+
+          socket.on("ChatMessage", data => {
+            console.log("%cNew chat message", "color:blue");
+            setSocketData(data);
+          });
         }
       }).catch(error => {
         localStorage.removeItem('access_token')
@@ -91,7 +97,7 @@ const Layout = props => {
 
           </div>
           <div className="col-sm">
-            <History socket={socket} isAuthorized={isAuthorized} currentChannel={currentChannel} />
+            <History socketData={socketData} isAuthorized={isAuthorized} currentChannel={currentChannel} />
           </div>
         </div>
       </div>

@@ -98,8 +98,8 @@ function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
 
   // Listen for chat messages. Note you will also receive your own!
   socket.on('ChatMessage', data => {
-    console.log('We got a ChatMessage packet!');
-    console.log(data);
+    console.log(chalk.red('We got a ChatMessage packet!'));
+    // console.log(data);
 
     let text_message = '-';
     let image_url = '-';
@@ -113,34 +113,10 @@ function createChatSocket(userId, channelId, endpoints, authkey, socketCustom) {
     }
     data.text_message = text_message;
     data.image_url = image_url;
-    // searchOutput.push(raw)
 
-    // console.log(data.message); // Let's take a closer look
-    MixerChat.findOne({
-      attributes: ['id'],
-      where: { chatId: data.id }
-    }).then(chat => {
-      console.log("Chat:", chat)
-      if (chat) {
-        console.log("Chat already exist in db")
-      } else {
-        console.log("Insert chat in db")
-
-        MixerChat.create({ chatId: data.id, channelId: data.channel, userId: data.user_id, messageType: data.message.message[0].type, message: data.text_message, imageUrl: data.image_url }).then(chat => {
-          console.log(`Auto-generated ID:`, chat.id);
-        }).catch(err => {
-          console.log("Sequlize save error: ", err);
-        });
-
-      }
-      // return res.send(response)
-    }).catch(err => {
-      console.log("Message search error");
-      // return res.send(err)
-    });
-
-    // socketCustom.emit("ChatMessage", "Hey boy"); // Emitting a new message. It will be consumed by the client
     socketCustom.emit("ChatMessage", data); // Emitting a new message. It will be consumed by the client
+
+
   });
 
   // Listen for socket errors. You will need to handle these here.
@@ -256,29 +232,34 @@ app.post('/channels', (req, res) => {
 
   axios.get(`${MIXER_API_ENDPOINT}/channels/${channelName}?fields=id`).then(response => {
     if (response.data.error) {
-      // console.log("Error 3", err);
       return res.send(response.data.error)
     } else {
       let channelId = response.data.id;
-      // console.log("Channerl Id", response.data.id);
       Channels.create({ channelName: channelName, channelId: channelId }).then(channels => {
-        // console.log(`Auto-generated ID:`, channels.id);
         return res.send(channels)
       }).catch(err => {
-        // console.log("Error 1", err);
         return res.send(err)
       });
     }
   }).catch(error => {
-    // console.log("Error 2", error);
-    // console.log("Error 2", error.response.data.error);
-    // console.log("Error 4", error.data);
-
     if (error.response.data.error && error.response.data.error === 'Not Found') {
       return res.send("notfound")
     }
     return res.send(error)
   })
+})
+
+// Create an item
+app.post('/save-chat', (req, res) => {
+
+  const data = req.body
+
+  MixerChat.create({ chatId: data.id, channelId: data.channel, userId: data.user_id, messageType: data.message.message[0].type, message: data.text_message, imageUrl: data.image_url }).then(chat => {
+    console.log(`Auto-generated ID:`, chat.id);
+  }).catch(err => {
+    console.log("Sequlize save error: ", err);
+  });
+
 })
 
 server.listen(port, () => {

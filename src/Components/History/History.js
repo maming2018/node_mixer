@@ -8,16 +8,16 @@ import SendMessage from '../SendMessage/SendMessage';
 
 const History = props => {
 
-  // console.log("props.isAuthorized: ", props.isAuthorized)
+  // console.log("props.currentChannel: ", props.currentChannel)
 
   const [history, setHistory] = useState([]);
+  const [oldSocket, setOldSocket] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
 
     // console.log("USE EFFECT COMPONENT/HISTORY.js");
-
-    if (props.currentChannel !== '') {
+    if (props.currentChannel !== '' && (!props.socketData || oldSocket == props.socketData)) {
       setIsLoading(true);
 
       axios.get(`${SERVER_ENDPOINT}/history`, {
@@ -29,23 +29,21 @@ const History = props => {
       }).catch(function (error) {
         console.log(error);
       }).then(function () {
-
         setIsLoading(false);
-
-        if (props.isAuthorized === true) {
-          // console.log("%cCalling chat socket", "color:blue")
-          props.socket.on("ChatMessage", data => {
-            // console.log("%cNew chat message", "color:blue");
-            // console.table(data)
-
-            setHistory(prevHistory => ([...prevHistory, data]));
-          });
-        }
-
       });
     }
-
-  }, [props.currentChannel, props.isAuthorized])
+    if (props.isAuthorized === true && props.socketData) {
+      if (oldSocket != props.socketData) {
+        setHistory(prevHistory => ([...prevHistory, props.socketData]));
+        setOldSocket(props.socketData);
+        axios.post(`${SERVER_ENDPOINT}/save-chat`, props.socketData).then(response => {
+          // console.log("save-chat response:", response);
+        }).catch(error => {
+          // console.log("save-chat error:", error)
+        })
+      }
+    }
+  }, [props.currentChannel, props.socketData])
 
   return (
     <div>
