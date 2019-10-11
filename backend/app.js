@@ -12,11 +12,9 @@ const sequelize = require('./Config/Database');
 const MixerChat = require('./Models/MixerChat');
 const Channels = require('./Models/Channels');
 
-const MIXER_API_ENDPOINT = "https://mixer.com/api/v1";
+const constants = require('./Config/Constants')
 
 sequelize.sync({ force: false });
-
-const port = 3001;
 
 const app = express();
 app.use(cors());
@@ -46,7 +44,7 @@ const mixerSocketData = async socketCustom => {
 
   client.use(new Mixer.OAuthProvider(client, {
     tokens: {
-      access: 'dp4ptPbLelvKGirFDCqMS6LQyxh4uxs5FXEnrl6xARowZ06yII4HafoNA7luuDfH',
+      access: constants.ACCESS_TOKEN,
       expires: Date.now() + (10 * 365 * 24 * 60 * 60 * 1000)
     },
   }));
@@ -145,7 +143,7 @@ app.get('/history', (req, res) => {
   let searchOutput = [];
   let saveToDb = [];
 
-  axios.get(`${MIXER_API_ENDPOINT}/chats/${channel_id}/history`).then(function (response) {
+  axios.get(`${constants.MIXER_API_ENDPOINT}/chats/${channel_id}/history`).then(function (response) {
     response.data.forEach(raw => {
       // console.log(raw)
       let text_message = '-';
@@ -201,7 +199,7 @@ app.post('/token-verify', (req, res) => {
   const { access_token } = req.body;
   // console.log("access_token:", access_token);
 
-  axios.get(`${MIXER_API_ENDPOINT}/users/current`, {
+  axios.get(`${constants.MIXER_API_ENDPOINT}/users/current`, {
     headers: { Authorization: `Bearer ${access_token}` }
   }).then(() => {
     console.log('You are now authenticated!');
@@ -230,7 +228,7 @@ app.post('/channels', (req, res) => {
 
   const { channelName } = req.body
 
-  axios.get(`${MIXER_API_ENDPOINT}/channels/${channelName}?fields=id`).then(response => {
+  axios.get(`${constants.MIXER_API_ENDPOINT}/channels/${channelName}?fields=id`).then(response => {
     if (response.data.error) {
       return res.send(response.data.error)
     } else {
@@ -262,7 +260,6 @@ app.post('/save-chat', (req, res) => {
 
 })
 
-server.listen(port, () => {
-  console.log(chalk.blue(`MIXER  - Server runnig on port : ${port}`))
-  console.log(chalk.blue('URL: http://localhost:3001'))
+server.listen(constants.SERVER_PORT, () => {
+  console.log(chalk.blue(`MIXER  - Server runnig on port : ${constants.SERVER_PORT}`))
 })

@@ -7,7 +7,7 @@ import History from '../../Components/History/History';
 import Channels from '../../Components/Channels/Channels';
 import ChannelForm from '../../Components/Channels/ChannelForm/ChannelForm';
 
-const socket = socketIOClient('http://127.0.0.1:3001', { transports: ['websocket', 'polling', 'flashsocket'] });
+const socket = socketIOClient(SERVER_ENDPOINT, { transports: ['websocket', 'polling', 'flashsocket'] });
 
 const Layout = props => {
 

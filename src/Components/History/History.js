@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
 
-import { SERVER_ENDPOINT, OUR_MIXER_CHANNEL_ID } from '../../Config/constants'
+import { SERVER_ENDPOINT, OUR_MIXER_CHANNEL_ID, OAUTH_APP_CLIENT_ID, OAUTH_APP_REDIRECT_URI } from '../../Config/constants'
 import Loader from '../Loader/LoaderOne'
 import HistoryCont from '../../Containers/History/History';
 import SendMessage from '../SendMessage/SendMessage';
@@ -57,7 +57,7 @@ const History = props => {
               <HistoryCont history={history} />
               {
                 OUR_MIXER_CHANNEL_ID != props.currentChannel ? null :
-                  props.isAuthorized === true ? <SendMessage /> : <a href="https://mixer.com/oauth/authorize?response_type=token&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2F&scope=chat:connect&client_id=e31e62c385128098f25cb1e703afbcba381a6a61e3ed62c3">Please login to chat</a>}
+                  props.isAuthorized === true ? <SendMessage /> : <a href={`https://mixer.com/oauth/authorize?response_type=token&redirect_uri=${OAUTH_APP_REDIRECT_URI}&scope=chat:connect&client_id=${OAUTH_APP_CLIENT_ID}`}>Please login to chat</a>}
             </div>
       }
     </div>
